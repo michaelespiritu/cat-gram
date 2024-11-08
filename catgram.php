@@ -38,6 +38,11 @@ class CatGram
     //sanitize the class attr
     $class = sanitize_html_class($atts['class']);
 
+    //if [cat_gram breed=""]
+    if (empty($breed)) {
+      $breed = 'pers';
+    }
+
     //return the result of get_cat_image
     return $this->get_cat_image($breed, $class);
   }
