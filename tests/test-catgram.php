@@ -7,7 +7,6 @@ class CatGramTest extends WP_UnitTestCase
      */
     public function testDefaultBreed()
     {
-        // Test shortcode with no breed attribute
         $output = do_shortcode('[cat_gram]');
         $this->assertStringContainsString('<img', $output,  'The default breed photo Persian should be generated.');
         $this->assertStringContainsString('Persian', $output, 'The image alt should contain the breed name Persian.');
@@ -18,7 +17,6 @@ class CatGramTest extends WP_UnitTestCase
      */
     public function testSpecificBreed()
     {
-        // Test shortcode with a valid breed
         $output = do_shortcode('[cat_gram breed="beng"]');
         $this->assertStringContainsString('<img', $output, 'The specific breed photo bengals should be generated.');
         $this->assertStringContainsString('Bengals', $output, 'The image alt should contain the breed name Bengals.');
@@ -49,6 +47,6 @@ class CatGramTest extends WP_UnitTestCase
     {
         $output = do_shortcode('[cat_gram breed=""]');
         $this->assertStringContainsString('<img', $output, 'Even with an empty breed attr, the default breed should be inserted.');
-        $this->assertStringContainsString('Persian', $output, 'The image alt should contain the breed name (Persian).');
+        $this->assertStringContainsString('Persian', $output, 'The image alt should contain the breed name Persian.');
     }
 }
