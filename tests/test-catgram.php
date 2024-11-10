@@ -2,6 +2,51 @@
 
 class CatGramTest extends WP_UnitTestCase
 {
+    public function setUp(): void
+    {
+        parent::setUp();
+
+        update_option('cat_gram_api_key', 'test_key');
+
+        add_filter('pre_http_request', [$this, 'mock_http_response'], 10, 3);
+    }
+
+    public function mock_http_response($preempt, $parsed_args, $url)
+    {
+        $breeds = [
+            'pers' => ['url' => 'https://example.com/cat-persian.jpg', 'description' => 'Persian'],
+            'beng'  => ['url' => 'https://example.com/cat-ben.jpg', 'description' => 'Bengals'],
+        ];
+
+        foreach ($breeds as $breed_id => $breed_data) {
+            if (strpos($url, "breed_ids=$breed_id")) {
+                return [
+                    'headers' => [],
+                    'body'    => json_encode([
+                        [
+                            'url' => $breed_data['url'],
+                            'breeds' => [
+                                ['description' => $breed_data['description']]
+                            ]
+                        ]
+                    ]),
+                    'response' => [
+                        'code'    => 200,
+                        'message' => 'OK',
+                    ],
+                ];
+            }
+        }
+
+        return $preempt;
+    }
+
+    public function tearDown(): void
+    {
+        parent::tearDown();
+        delete_option('cat_gram_api_key');
+    }
+
     /**
      * Test if no breed attr is present.
      */

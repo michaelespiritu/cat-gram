@@ -3,12 +3,11 @@
 /**
  * Plugin Name: Cat Gram
  * Author:      Michael Espiritu
- * Description: Cat Image Generator visit https://api.thecatapi.com/v1/breeds for breed list and get the ID. Example: "bslo" for British Longhair
+ * Description: Cat Image Generator. Visit https://api.thecatapi.com/v1/breeds for breed list and get the ID. Example: "bslo" for British Longhair
  * Version:     0.1.0
  * License:     GPL-2.0+
  * License URL: http://www.gnu.org/licenses/gpl-2.0.txt
  */
-
 
 if (!defined('ABSPATH')) {
   exit; // Exit if accessed directly
@@ -16,13 +15,74 @@ if (!defined('ABSPATH')) {
 
 class CatGram
 {
-
   public function __construct()
   {
     //Shortcode [cat_gram]
     add_shortcode('cat_gram', [$this, 'cat_gram_shortcode']);
+
+    // Add settings page
+    add_action('admin_menu', [$this, 'add_settings_page']);
+
+    // Register settings
+    add_action('admin_init', [$this, 'register_settings']);
   }
 
+  public function add_settings_page()
+  {
+    add_options_page(
+      'Cat Gram Settings',
+      'Cat Gram',
+      'manage_options',
+      'cat-gram-settings',
+      [$this, 'settings_page_html']
+    );
+  }
+
+  public function register_settings()
+  {
+    register_setting('cat_gram_option_group', 'cat_gram_api_key', [
+      'sanitize_callback' => 'sanitize_text_field'
+    ]);
+
+    add_settings_section(
+      'cat_gram_settings_section',
+      'API Settings',
+      null,
+      'cat-gram-settings'
+    );
+
+    add_settings_field(
+      'cat_gram_api_key',
+      'Cat API Key',
+      [$this, 'api_key_field_callback'],
+      'cat-gram-settings',
+      'cat_gram_settings_section'
+    );
+  }
+
+  public function api_key_field_callback()
+  {
+    $api_key = get_option('cat_gram_api_key');
+    echo '<input type="text" id="cat_gram_api_key" name="cat_gram_api_key" value="' . esc_attr($api_key) . '" />';
+  }
+
+  public function settings_page_html()
+  {
+?>
+    <div class="wrap">
+      <h1>Cat Gram Settings</h1>
+      <form method="post" action="options.php">
+        <?php
+        settings_fields('cat_gram_option_group');
+        do_settings_sections('cat-gram-settings');
+        submit_button();
+        ?>
+      </form>
+    </div>
+<?php
+  }
+
+  // Handle the [cat_gram] shortcode
   public function cat_gram_shortcode($atts)
   {
     //attribute for shortcode [cat_gram breed="pers" class="cat-img"]
@@ -49,13 +109,20 @@ class CatGram
 
   private function get_cat_image($breed, $class)
   {
+    $api_key = get_option('cat_gram_api_key');
+
+    // If API key is not set, return message
+    if (empty($api_key)) {
+      return '<p>Please set your Cat API key.</p>';
+    }
+
     // encode the $breed attribute to be used as a query of API Url and assign it to a variable.
     $api_url = 'https://api.thecatapi.com/v1/images/search?breed_ids=' . urlencode($breed);
 
     //Send get request to cat api with proper api key
     $response = wp_remote_get($api_url, [
       'headers' => [
-        'x-api-key' => 'live_oz0TGQm7bZD8kd4BFlNHb296YuwiLb6Nqxv36Ry1KNbKBWhRDj0TpoKmLp3VyKQD'
+        'x-api-key' => $api_key
       ]
     ]);
 
