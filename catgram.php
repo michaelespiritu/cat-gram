@@ -25,6 +25,17 @@ class CatGram
 
     // Register settings
     add_action('admin_init', [$this, 'register_settings']);
+
+    // Add Settings Link in plugin action link
+    add_filter('plugin_action_links_' . plugin_basename(__FILE__), [$this, 'add_settings_link']);
+  }
+
+  public function add_settings_link($links)
+  {
+    $settings_link = '<a href="options-general.php?page=cat-gram-settings">Settings</a>';
+    array_unshift($links, $settings_link);
+
+    return $links;
   }
 
   public function add_settings_page()
