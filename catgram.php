@@ -17,7 +17,7 @@ class CatGram
 {
   public function __construct()
   {
-    //Shortcode [cat_gram]
+    // Add shortcode [cat_gram]
     add_shortcode('cat_gram', [$this, 'cat_gram_shortcode']);
 
     // Add settings page
@@ -52,7 +52,7 @@ class CatGram
   public function register_settings()
   {
     register_setting('cat_gram_option_group', 'cat_gram_api_key', [
-      'sanitize_callback' => 'sanitize_text_field'
+      'sanitize_callback' => 'sanitize_text_field',
     ]);
 
     add_settings_section(
@@ -69,12 +69,77 @@ class CatGram
       'cat-gram-settings',
       'cat_gram_settings_section'
     );
+
+    add_settings_section(
+      'cat_breed_section',
+      'Cat Breeds',
+      [$this, 'breed_settings_callback'],
+      'cat-gram-settings'
+    );
   }
 
+  // Display the API key input field
   public function api_key_field_callback()
   {
     $api_key = get_option('cat_gram_api_key');
     echo '<input type="text" id="cat_gram_api_key" name="cat_gram_api_key" value="' . esc_attr($api_key) . '" />';
+  }
+
+  // Display the breed settings callback
+  public function breed_settings_callback()
+  {
+    $api_url = 'https://api.thecatapi.com/v1/breeds';
+
+    // Send GET request to the Cat Breed API
+    $response = wp_remote_get($api_url);
+
+    // If there is an error, return immediately
+    if (is_wp_error($response)) {
+      return '<p>Sorry, there was an issue connecting to the cat breeds service. Please try again later.</p>';
+    }
+
+    // Retrieve the response body and decode the JSON.
+    $body = wp_remote_retrieve_body($response);
+    $breeds = json_decode($body);
+
+    // Check if the API response contains breeds data.
+    if (empty($breeds)) {
+      return '<p>No breeds found. Please check back later.</p>';
+    }
+
+    // Search form for breed
+    $output = '<input type="text" id="breed-search" placeholder="Search for a breed..." style="margin-bottom: 20px; padding: 5px; width: 100%;">';
+
+    // Example shortcode
+    $output .= '<div style="width: 100%; text-align: center;"><h2 id="breed-example">Example: <strong>[cat_gram breed="abys" class="cat-img"]</strong> for <span style="color: red;">Abyssinian</span> cat breed.</h2>';
+
+    $output .= '<p>Click on each breed to generate shortcode.</p></div>';
+
+    // Wrap the breeds in a flex container
+    $output .= '<div class="cat-breeds-container" style="display: flex; flex-wrap: wrap; gap: 5px;">';
+
+    foreach ($breeds as $breed) {
+      $breed_name = esc_html($breed->name);
+      $breed_id = esc_html($breed->id);
+
+      // Add each breed name with its ID in a styled container
+      $output .= "<div class='cat-breed-item' data-breed-id='{$breed_id}' data-breed-name='{$breed_name}' style='flex: 1 0 20%; min-width: 150px; padding: 2px 5px; border: 1px solid #ddd; border-radius: 5px; text-align: center; cursor: pointer;'>";
+      $output .= "<p><strong>{$breed_name}</strong></p>";
+      $output .= "<p>Breed ID: {$breed_id}</p>";
+      $output .= '</div>';
+    }
+
+    $output .= '</div>'; // Closing breed container
+
+    echo $output;
+
+    $this->enqueue_breed_js();
+  }
+
+  private function enqueue_breed_js()
+  {
+    wp_enqueue_script('cat-gram-js', plugin_dir_url(__FILE__) . 'assets/js/script.js', null, true);
+    wp_enqueue_style('cat-gram-css', plugin_dir_url(__FILE__) . 'assets/css/styles.css', null, 'all');
   }
 
   public function settings_page_html()
@@ -82,12 +147,39 @@ class CatGram
 ?>
     <div class="wrap">
       <h1>Cat Gram Settings</h1>
+
+      <!-- Tab Navigation -->
+      <h2 class="nav-tab-wrapper">
+        <a href="#" class="nav-tab nav-tab-active" id="api-tab">API Key</a>
+        <a href="#" class="nav-tab" id="breeds-tab">Cat Breeds</a>
+      </h2>
+
       <form method="post" action="options.php">
         <?php
+        // Security fields and the options group
         settings_fields('cat_gram_option_group');
-        do_settings_sections('cat-gram-settings');
-        submit_button();
         ?>
+
+        <!-- Tab Contents -->
+        <div id="api-key-content">
+          <h3>API Key Settings</h3>
+          <p><strong>Cat API Key:</strong></p>
+          <input type="text" id="cat_gram_api_key" name="cat_gram_api_key" value="<?php echo esc_attr(get_option('cat_gram_api_key')); ?>" />
+          <br /><br />
+          <!-- Submit Button -->
+          <p>
+            <input type="submit" name="submit" id="submit" class="button button-primary" value="<?php esc_attr_e('Save Changes', 'cat-gram'); ?>" />
+          </p>
+        </div>
+
+        <div id="cat-breeds-content" style="display:none;">
+          <h3>Cat Breeds</h3>
+          <p>List of Available Cat Breeds:</p>
+          <div class="cat-breeds-container" style="display: flex; flex-wrap: wrap; gap: 5px;">
+            <?php echo $this->breed_settings_callback(); ?>
+          </div>
+        </div>
+
       </form>
     </div>
 <?php
@@ -96,25 +188,25 @@ class CatGram
   // Handle the [cat_gram] shortcode
   public function cat_gram_shortcode($atts)
   {
-    //attribute for shortcode [cat_gram breed="pers" class="cat-img"]
-    //https://api.thecatapi.com/v1/breeds check for cat breed and get ID
+    // Attribute for shortcode [cat_gram breed="pers" class="cat-img"]
+    // https://api.thecatapi.com/v1/breeds check for cat breed and get ID
     $atts = shortcode_atts([
-      'breed' => 'pers', //default to persian if no breed given.
+      'breed' => 'pers', // default to persian if no breed given.
       'class' => '',
     ], $atts, 'cat_gram');
 
-    //sanitize the breed attr
+    // Sanitize the breed attribute
     $breed = sanitize_text_field($atts['breed']);
 
-    //sanitize the class attr
+    // Sanitize the class attribute
     $class = sanitize_html_class($atts['class']);
 
-    //if [cat_gram breed=""]
+    // If [cat_gram breed=""]
     if (empty($breed)) {
       $breed = 'pers';
     }
 
-    //return the result of get_cat_image
+    // Return the result of get_cat_image
     return $this->get_cat_image($breed, $class);
   }
 
@@ -127,32 +219,31 @@ class CatGram
       return '<p>Please set your Cat API key.</p>';
     }
 
-    // encode the $breed attribute to be used as a query of API Url and assign it to a variable.
+    // Encode the $breed attribute to be used as a query of API Url and assign it to a variable.
     $api_url = 'https://api.thecatapi.com/v1/images/search?breed_ids=' . urlencode($breed);
 
-    //Send get request to cat api with proper api key
+    // Send get request to cat api with proper API key
     $response = wp_remote_get($api_url, [
       'headers' => [
         'x-api-key' => $api_key
       ]
     ]);
 
-    //if there is error, return immediately.
+    // If there is an error, return immediately.
     if (is_wp_error($response)) {
       return '<p>Something went wrong. Please try again later.</p>';
     }
 
-    //retrieve the response and json_decode it.
+    // Retrieve the response and json_decode it.
     $body = wp_remote_retrieve_body($response);
     $data = json_decode($body);
 
-    //If class attribute is present insert it to the image.
+    // If class attribute is present, insert it to the image.
     $class_attr = $class ? ' class="' . esc_attr($class) . '"' : '';
 
-    //Check if api response has image url
+    // Check if API response has image URL
     if (!empty($data[0]->url)) {
-      return '<img src="' . esc_url($data[0]->url) . '"' . $class_attr .
-        ' alt="' . esc_attr($data[0]->breeds[0]->description ?? 'Cat Gram') . '" />';
+      return '<img src="' . esc_url($data[0]->url) . '"' . $class_attr . ' alt="' . esc_attr($data[0]->breeds[0]->description ?? 'Cat Gram') . '" />';
     }
 
     return '<p>No cat photo found.</p>';

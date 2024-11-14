@@ -1,0 +1,28 @@
+.nav-tab-wrapper {
+  margin-bottom: 20px;
+}
+
+.nav-tab {
+  padding: 10px 15px;
+  display: inline-block;
+  cursor: pointer;
+  background-color: #f1f1f1;
+  border: 1px solid #ccc;
+  border-radius: 3px 3px 0 0;
+  text-decoration: none;
+  color: #333;
+}
+
+.nav-tab-active {
+  background-color: #fff;
+  border-bottom-color: transparent;
+  font-weight: bold;
+}
+
+#api-key-content,
+#cat-breeds-content {
+  padding: 20px;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
