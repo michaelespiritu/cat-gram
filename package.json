@@ -1,0 +1,27 @@
+{
+  "name": "catgram",
+  "version": "1.0.0",
+  "description": "Cat Image Generator",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "wp-scripts build",
+    "start": "wp-scripts start"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/michaelespiritu/cat-gram.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/michaelespiritu/cat-gram/issues"
+  },
+  "homepage": "https://github.com/michaelespiritu/cat-gram#readme",
+  "devDependencies": {
+    "@wordpress/scripts": "30.4.0"
+  }
+}

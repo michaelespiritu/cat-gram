@@ -20,6 +20,8 @@ class CatGram
     // Add shortcode [cat_gram]
     add_shortcode('cat_gram', [$this, 'cat_gram_shortcode']);
 
+    add_action('init', [$this, 'register_block']);
+
     // Add settings page
     add_action('admin_menu', [$this, 'add_settings_page']);
 
@@ -29,6 +31,42 @@ class CatGram
     // Add Settings Link in plugin action link
     add_filter('plugin_action_links_' . plugin_basename(__FILE__), [$this, 'add_settings_link']);
   }
+
+  public function register_block()
+  {
+    // Enqueue block editor assets
+    wp_register_script(
+      'cat-gram-block',
+      plugin_dir_url(__FILE__) . 'build/index.js',
+      ['wp-blocks', 'wp-element'],
+      filemtime(plugin_dir_path(__FILE__) . 'build/index.js'),
+      true
+    );
+
+    wp_register_style(
+      'cat-gram-block-editor',
+      plugin_dir_url(__FILE__) . 'assets/css/block-editor.css',
+      [],
+      filemtime(plugin_dir_path(__FILE__) . 'assets/css/block-editor.css')
+    );
+
+    register_block_type('cat-gram/block', [
+      'editor_script' => 'cat-gram-block',
+      'editor_style'  => 'cat-gram-block-editor',
+      'render_callback' => [$this, 'render_cat_gram_block'],
+    ]);
+  }
+
+  public function render_cat_gram_block($attributes, $content, $block)
+  {
+    $breed_id = isset($attributes['breed']) ? sanitize_text_field($attributes['breed']) : 'pers';
+    $class = isset($block->attributes['className']) ? sanitize_text_field($block->attributes['className']) : '';
+
+    $cat_image_html = $this->get_cat_image($breed_id, $class);
+
+    return '<div class="cat-gram-block">' . $cat_image_html . '</div>';
+  }
+
 
   public function add_settings_link($links)
   {
@@ -210,7 +248,7 @@ class CatGram
     return $this->get_cat_image($breed, $class);
   }
 
-  private function get_cat_image($breed, $class)
+  private function get_cat_image($breed, $class = null)
   {
     $api_key = get_option('cat_gram_api_key');
 

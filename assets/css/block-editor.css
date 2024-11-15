@@ -1,0 +1,19 @@
+.cat-gram-block {
+  box-sizing: border-box;
+  padding: 20px;
+  border: 1px solid #000;
+  width: 100%;
+}
+
+.cat-gram-block select {
+  padding: 8px;
+  width: 100%;
+  max-width: 100%;
+  font-size: 14px;
+}
+
+.cat-image img {
+  width: 100%;
+  max-width: 400px;
+  border-radius: 5px;
+}
